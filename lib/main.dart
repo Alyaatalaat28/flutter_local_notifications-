@@ -3,15 +3,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Initialize the plugin
-final FlutterLocalNotificationsPlugin notificationsPlugin = 
+final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-Future<void> main()async {
-   WidgetsFlutterBinding.ensureInitialized();
-  
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   // Setup notifications
   await setupNotifications();
-  
+
   // Request notification permissions (Android 13+ & iOS)
   await requestNotificationPermission();
   runApp(const MyApp());
@@ -22,7 +22,8 @@ Future<void> setupNotifications() async {
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher'); // Default app icon
 
-  const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
+  const DarwinInitializationSettings iosSettings =
+      DarwinInitializationSettings();
 
   await notificationsPlugin.initialize(
     const InitializationSettings(
@@ -37,6 +38,7 @@ Future<void> setupNotifications() async {
     },
   );
 }
+
 // Show a simple notification
 Future<void> showSimpleNotification() async {
   const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
@@ -59,16 +61,49 @@ Future<void> showSimpleNotification() async {
     payload: 'notification_payload', // Optional data
   );
 }
+
 // Request permissions
 Future<void> requestNotificationPermission() async {
   await Permission.notification.request(); // Android 13+
-  
+
   // iOS permissions
-  await notificationsPlugin.resolvePlatformSpecificImplementation<
-      IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(
-    alert: true,
-    badge: true,
-    sound: true,
+  await notificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>()
+      ?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+}
+// Show big picture notification
+Future<void> showBigPictureNotification() async {
+  final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    'big_picture_channel', // Channel ID
+    'Big Picture Notifications', // Channel Name
+    channelDescription: 'Notifications with expanded image view',
+    importance: Importance.high,
+    priority: Priority.high,
+    styleInformation: BigPictureStyleInformation(
+      // Uses your default app icon as the big picture
+      const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      contentTitle: 'Expanded Title', // Appears when expanded
+      summaryText: 'More details here', // Appears below image
+    ),
+  );
+
+  final NotificationDetails platformDetails = NotificationDetails(
+    android: androidDetails,
+    // Keep iOS simple (won't show big picture)
+    iOS: const DarwinNotificationDetails(),
+  );
+
+  await notificationsPlugin.show(
+    2, // Notification ID
+    'Big Picture Style', // Title (collapsed view)
+    'Tap to expand', // Body (collapsed view)
+    platformDetails,
   );
 }
 
@@ -83,7 +118,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(title: const Text('Local Notifications')),
         body: Center(
           child: ElevatedButton(
-            onPressed: showSimpleNotification,
+            onPressed: showBigPictureNotification,
             child: const Text('Show Notification'),
           ),
         ),
